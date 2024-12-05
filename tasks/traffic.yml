@@ -1,0 +1,72 @@
+---
+# traffic draining
+# 1. Collect current running configs
+# 2. Save the running configs on the Ansible Controller /tmp
+# 3. Python script is called
+#    - Python script reads through the running configs file
+#    - If interfaces() function is called, a list of interfaces to be shut down is returned.
+#    - If routing() function is called, a list of routing stuff to be done.
+#    - If l2() function is called, a list of stuff to be done
+#    - In a nutshell, a python script with functions spitting out a certain list
+# 4. shut down of interfaces as per list given
+# 5. shut down of routing protocols as per list given
+# 6. shut down of l2 stuff as per list given
+
+- name: Collect juniper device running configs
+  junipernetworks.junos.junos_command:
+    commands: show configuration
+    display: set
+  register: config_output
+  ignore_errors: true
+
+# - name: Display task results
+#   ansible.builtin.debug:
+#     var: config_output
+
+# regex_replace('\r\n', '\n'): Ensures that the configuration is formatted properly with new lines,
+# in case the original output contains carriage return and line feed (\r\n).
+- name: Ensure the config is properly formatted plus set file name
+  ansible.builtin.set_fact:
+    formatted_config: "{{ config_output.stdout[0] | regex_replace('\r\n', '\n') }}"
+    tmp_config_store: "{{ tmp_root_dir }}/{{ inventory_hostname }}-running-config.txt"
+  delegate_to: localhost
+  ignore_errors: true
+  when: config_output["failed"] == false
+
+- name: Save the configuration to the temporary config store
+  ansible.builtin.copy:
+    content: "{{ formatted_config }}"
+    dest: "{{ tmp_config_store }}"
+  delegate_to: localhost
+  ignore_errors: true
+  when: config_output["failed"] == false
+
+- name: Run python script to check failed hosts
+  ansible.builtin.command:
+    cmd: "python3 library/getList.py some-string-here {{ tmp_config_store }}" # A string that identifies which function to call
+  register: script_output
+
+- name: Set interfaces list
+  ansible.builtin.set_fact:
+    interfaces_list: "{{ script_output['stdout'] }}"
+
+- name: Display listed interfaces
+  ansible.builtin.debug:
+    var: interfaces_list
+  # when: interfaces_list | length > 0
+
+- name: Shut down the listed interfaces
+  junipernetworks.junos.junos_command:       # is this the module to configure/change anything?
+    commands: disable {{ item }}             # Interfaces to be shut down
+  loop: "{{ interfaces_list }}"
+  when: 
+    - interfaces | length > 0
+    - isolation
+
+- name: Admin up the listed interfaces
+  junipernetworks.junos.junos_command:
+    commands: enable/delete {{ item }}             # Interfaces to be unshut
+  loop: "{{ interfaces_list }}"
+  when: 
+    - interfaces | length > 0
+    - normalization

@@ -1,0 +1,28 @@
+---
+# === DIR ===
+root_dir: /tmp
+
+# === GIT - Common ===
+gitlab_user_email: your email
+gitlab_sub_domain: your subdomain
+
+# AAP doesn't pass SCM credentials over to Execution environment.
+# Work around was to use Network credential type that takes in username/password.
+# Parses env var : ANSIBLE_NET_USERNAME & ANSIBLE_NET_PASSWORD
+gitlab_username: "{{ lookup('env', 'ANSIBLE_NET_USERNAME') }}"
+gitlab_token: "{{ lookup('env', 'ANSIBLE_NET_PASSWORD') }}"
+
+# OS UPGRADES
+# junos_image_file =>  vmx-bundle-23.2R2.21.tgz to be used for the lab devices
+junos_device_storage_path: /var/tmp/
+os_images_store_git_repo_name: your git repo name
+os_images_store_git_repo_namespace: your git repo namespace
+
+os_images_store_git_repo_sub_dir: Juniper
+os_images_store_git_repo_branch: main
+os_images_store_git_repo_url: "https://{{ gitlab_username }}:{{ gitlab_token }}@{{ gitlab_sub_domain }}/{{ os_images_store_git_repo_namespace }}/{{ os_images_store_git_repo_name }}.git"
+
+# Timers
+junos_sw_upgrade_timeout: 3600
+
+ 

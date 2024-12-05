@@ -1,0 +1,82 @@
+---
+- name: UPLOAD OS IMAGE TO DEVICE
+  hosts: "{{ target_host }}"
+  gather_facts: false
+  connection: ansible.netcommon.netconf
+  
+  vars:
+    ansible_network_os: junos
+ 
+  pre_tasks:
+    - name: Include specific project variables
+      ansible.builtin.include_vars:
+        dir: group_vars
+      delegate_to: localhost
+
+  tasks:
+    - name: Debug extra variables
+      ansible.builtin.debug:
+        msg:
+          - "Hostname      : {{ target_host }}"
+          - "OS Image File : {{ os_image_file }}"
+      delegate_to: localhost
+    
+    - name: Download software image from Artifacts store but NOT perform software upgrade
+      ansible.builtin.include_role:
+        name: role-junos-software-upgrade
+      vars:
+        upgrade_device: false
+        upload_image: true
+        tmp_root_dir: "{{ root_dir }}"
+        software_image_file_name: "{{ os_image_file  }}"
+        juniper_device_tmp_storage: "{{ junos_device_storage_path }}"
+        vendor_dir: "{{ os_images_store_git_repo_sub_dir }}"
+        git_repo_name: "{{ os_images_store_git_repo_name }}"
+        git_repo_url: "{{ os_images_store_git_repo_url }}"
+        git_repo_branch: "{{ os_images_store_git_repo_branch }}"
+  
+
+- name: PERFORM SOFTWARE UPGRADE
+  hosts: "{{ target_host }}"
+  gather_facts: false
+  connection: ansible.netcommon.netconf
+  
+  
+  vars:
+    ansible_network_os: junos
+    junos_provider:
+      host: "{{ ansible_host }}"
+      username: "{{ ansible_user }}"
+      password: "{{ ansible_password }}"
+      # validate_certs: false
+      # server_port: "{{ f5_access_port }}"
+      timeout: "{{ junos_sw_upgrade_timeout }}"
+      
+  pre_tasks:
+    - name: Include specific project variables
+      ansible.builtin.include_vars:
+        dir: group_vars
+      delegate_to: localhost
+
+  tasks:
+    - name: Debug extra variables
+      ansible.builtin.debug:
+        msg:
+          - "Hostname      : {{ target_host }}"
+          - "OS Image File : {{ os_image_file }}"
+      delegate_to: localhost
+    
+    - name: Perform software upgrade
+      ansible.builtin.include_role:
+        name: role-junos-software-upgrade
+      vars:
+        upgrade_device: true
+        upload_image: false
+        tmp_root_dir: "{{ root_dir }}"
+        software_image_file_name: "{{ os_image_file  }}"
+        juniper_device_tmp_storage: "{{ junos_device_storage_path }}"
+        provider: "{{ junos_provider }}"
+        vendor_dir: ""
+        git_repo_name: ""
+        git_repo_url: ""
+        git_repo_branch: ""  

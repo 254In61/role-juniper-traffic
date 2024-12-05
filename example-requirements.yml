@@ -1,0 +1,6 @@
+---
+# roles/requirements.yml
+roles:
+  - src: https://gitlab.vodafone.com.au/redhat/role-junos-software-upgrade.git
+    scm: git
+    version: main
