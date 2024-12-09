@@ -45,7 +45,7 @@
 - name: Generate Lists from interfaces.txt and protocols.txt files
   ansible.builtin.set_fact:
     interfaces_list: "{{ lookup('file', '{{ interfaces_file }}').splitlines() }}"
-    protocols_list: "{{ lookup('file', '{{ protocols_file }}').splitlines() }}"
+    # protocols_list: "{{ lookup('file', '{{ protocols_file }}').splitlines() }}"
   delegate_to: localhost
 
 # - name: Display lists
