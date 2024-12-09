@@ -48,13 +48,13 @@
     # protocols_list: "{{ lookup('file', '{{ protocols_file }}').splitlines() }}"
   delegate_to: localhost
 
-# - name: Display lists
-#   ansible.builtin.debug:
-#     msg: 
-#       - "Interfaces ; {{ interfaces_list }}"
-#       - "Protocols ; {{ protocol_list }}"
-#   delegate_to: localhost
-#   ignore_errors: true
+- name: Display lists
+  ansible.builtin.debug:
+    msg: 
+      - "Interfaces List ; {{ interfaces_list }}"
+      #- "Protocols ; {{ protocol_list }}"
+  delegate_to: localhost
+  ignore_errors: true
 
 - name: Display commands to run
   ansible.builtin.debug:
