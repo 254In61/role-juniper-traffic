@@ -2,15 +2,8 @@
 # traffic draining
 # 1. Collect current running configs
 # 2. Save the running configs on the Ansible Controller /tmp
-# 3. Python script is called
-#    - Python script reads through the running configs file
-#    - If interfaces() function is called, a list of interfaces to be shut down is returned.
-#    - If routing() function is called, a list of routing stuff to be done.
-#    - If l2() function is called, a list of stuff to be done
-#    - In a nutshell, a python script with functions spitting out a certain list
-# 4. shut down of interfaces as per list given
-# 5. shut down of routing protocols as per list given
-# 6. shut down of l2 stuff as per list given
+# 3. library/getList.py script is run.. Creates an interfaces.txt and protocols.txt files
+# 4. Ansible tasks run against the data in the 2 files above.
 
 - name: Collect juniper device running configs
   junipernetworks.junos.junos_command:
@@ -25,10 +18,12 @@
 
 # regex_replace('\r\n', '\n'): Ensures that the configuration is formatted properly with new lines,
 # in case the original output contains carriage return and line feed (\r\n).
-- name: Ensure the config is properly formatted plus set file name
+- name: Set some variables
   ansible.builtin.set_fact:
-    formatted_config: "{{ config_output.stdout[0] | regex_replace('\r\n', '\n') }}"
-    tmp_config_store: "{{ tmp_root_dir }}/{{ inventory_hostname }}-running-config.txt"
+    formatted_config: "{{ config_output.stdout[0] | regex_replace('\r\n', '\n') }}" # Ensure the config is properly formatted plus set file name
+    running_config_file: "{{ tmp_root_dir }}/running-config.txt"
+    interfaces_file: "{{ tmp_root_dir }}/interfaces.txt"
+    protocols_file: "{{ tmp_root_dir }}/protocols.txt"
   delegate_to: localhost
   ignore_errors: true
   when: config_output["failed"] == false
@@ -36,37 +31,52 @@
 - name: Save the configuration to the temporary config store
   ansible.builtin.copy:
     content: "{{ formatted_config }}"
-    dest: "{{ tmp_config_store }}"
+    dest: "{{ running_config_file }}"
   delegate_to: localhost
   ignore_errors: true
   when: config_output["failed"] == false
 
-- name: Run python script to check failed hosts
+- name: Run library/getList.py
   ansible.builtin.command:
-    cmd: "python3 library/getList.py some-string-here {{ tmp_config_store }}" # A string that identifies which function to call
+    cmd: "python3 library/getList.py {{ running_config_file }} {{ interfaces_file }} {{ protocols_file }}" # A string that identifies which function to call
   register: script_output
 
-- name: Set interfaces list
+# Read the health-checks commands files and create a list of commands to run
+- name: Generate Lists from interfaces.txt and protocols.txt files
   ansible.builtin.set_fact:
-    interfaces_list: "{{ script_output['stdout'] }}"
+    interfaces_list: "{{ lookup('file', '{{ interfaces_file }}').splitlines() }}"
+    protocols_list: "{{ lookup('file', '{{ protocols_file }}').splitlines() }}"
+  delegate_to: localhost
 
-- name: Display listed interfaces
+# - name: Display lists
+#   ansible.builtin.debug:
+#     msg: 
+#       - "Interfaces ; {{ interfaces_list }}"
+#       - "Protocols ; {{ protocol_list }}"
+#   delegate_to: localhost
+#   ignore_errors: true
+
+- name: Display commands to run
   ansible.builtin.debug:
-    var: interfaces_list
-  # when: interfaces_list | length > 0
-
-- name: Shut down the listed interfaces
-  junipernetworks.junos.junos_command:       # is this the module to configure/change anything?
-    commands: disable {{ item }}             # Interfaces to be shut down
+    msg: 
+      - "disable {{ item }}"
   loop: "{{ interfaces_list }}"
-  when: 
-    - interfaces | length > 0
-    - isolation
+  delegate_to: localhost
+  ignore_errors: true
 
-- name: Admin up the listed interfaces
-  junipernetworks.junos.junos_command:
-    commands: enable/delete {{ item }}             # Interfaces to be unshut
-  loop: "{{ interfaces_list }}"
-  when: 
-    - interfaces | length > 0
-    - normalization
+# Commands happen from here
+# - name: Shut down the listed interfaces
+#   junipernetworks.junos.junos_command:       # is this the module to configure/change anything?
+#     commands: disable {{ item }}             # Interfaces to be shut down
+#   loop: "{{ interfaces_list }}"
+#   when: 
+#     - interfaces | length > 0
+#     - isolation
+
+# - name: Admin up the listed interfaces
+#   junipernetworks.junos.junos_command:
+#     commands: enable/delete {{ item }}             # Interfaces to be unshut
+#   loop: "{{ interfaces_list }}"
+#   when: 
+#     - interfaces | length > 0
+#     - normalization
