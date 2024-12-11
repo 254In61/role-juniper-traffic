@@ -1,0 +1,31 @@
+---
+- name: Collect juniper device running configs
+  junipernetworks.junos.junos_command:
+    commands: show configuration
+    display: set
+  register: config_output
+  ignore_errors: true
+
+# - name: Display task results
+#   ansible.builtin.debug:
+#     var: config_output
+
+# regex_replace('\r\n', '\n'): Ensures that the configuration is formatted properly with new lines,
+# in case the original output contains carriage return and line feed (\r\n).
+- name: Set some variables
+  ansible.builtin.set_fact:
+    formatted_config: "{{ config_output.stdout[0] | regex_replace('\r\n', '\n') }}" # Ensure the config is properly formatted plus set file name
+    running_config_file: "{{ tmp_root_dir }}/running-config.txt"
+    interfaces_file: "{{ tmp_root_dir }}/interfaces.txt"
+    protocols_file: "{{ tmp_root_dir }}/protocols.txt"
+  delegate_to: localhost
+  ignore_errors: true
+  when: config_output["failed"] == false
+
+- name: Save the configuration to the temporary config store
+  ansible.builtin.copy:
+    content: "{{ formatted_config }}"
+    dest: "{{ running_config_file }}"
+  delegate_to: localhost
+  ignore_errors: true
+  when: config_output["failed"] == false
