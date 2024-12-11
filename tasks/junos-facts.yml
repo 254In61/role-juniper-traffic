@@ -5,7 +5,7 @@
     gather_subset:
       - hardware        # Hardware-related facts like chassis info
       - config         # Configuration information
-      - interfaces     # Interface details
+      #- interfaces     # Interface details
       - default         # default values
   register: junos_facts
   ignore_errors: true
