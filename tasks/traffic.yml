@@ -1,15 +1,17 @@
 ---
-# traffic draining
-# 1. Collect current running configs
-# 2. Save the running configs on the Ansible Controller /tmp
-# 3. library/getList.py script is run.. Creates an interfaces.txt and protocols.txt files
-# 4. Ansible tasks run against the data in the 2 files above.
+# Set file names
+- name: Setting file names
+  ansible.builtin.set_fact:
+    show_interfaces_terse_file: "{{ tmp_root_dir }}/show-interfaces-terse.txt"
+    show_ospf_interfaces_file: "{{ tmp_root_dir }}/show-ospf-interface.txt"
+    interfaces_to_change_file: "{{ tmp_root_dir }}/interfaces-to-change.txt"
+  delegate_to: localhost
 
 - name: Interfaces tasks
   ansible.builtin.import_tasks: interfaces.yml
 
-
-
+- name: Import Tasks
+  ansible.builtin.import_tasks: git.yml
 
 
 

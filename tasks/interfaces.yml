@@ -1,12 +1,4 @@
 ---
-# Set file names
-- name: Setting file names
-  ansible.builtin.set_fact:
-    show_interfaces_terse_file: show-interfaces-terse.txt
-    show_ospf_interfaces_file: show-ospf-interface.txt
-    interfaces_file: interfaces-to-change.txt
-  delegate_to: localhost
-
 # Collect all the present interfaces
 - name: Collect current interfaces
   junipernetworks.junos.junos_command: 
