@@ -5,6 +5,7 @@
     show_interfaces_terse_file: "{{ tmp_root_dir }}/show-interfaces-terse.txt"
     show_ospf_interfaces_file: "{{ tmp_root_dir }}/show-ospf-interface.txt"
     interfaces_to_change_file: "{{ tmp_root_dir }}/interfaces-to-change.txt"
+    inventory_hostname_dir_path: "{{ tmp_root_dir }}/{{ git_repo_name }}/{{ vendor_dir }}/{{ inventory_hostname }}/traffic-isolation"
   delegate_to: localhost
 
 - name: Interfaces tasks
