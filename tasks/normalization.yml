@@ -1,0 +1,47 @@
+---
+- name: Setting file paths
+  ansible.builtin.set_fact:
+    interfaces_to_change_file_path: "{{ tmp_root_dir }}/{{ git_repo_name }}/{{ vendor_dir }}/{{ inventory_hostname }}/traffic-diversion/{{ interfaces_to_change_file }}"
+  delegate_to: localhost
+# 1. Change Local Preference for BGP
+
+# 2. OSPF Overload
+
+
+# 3. VRRP priority
+
+
+# 4. Enable southbound interfaces
+- name: Clone the config backup git repository
+  ansible.builtin.git:
+    repo: "{{ git_repo_url }}"
+    dest: "{{ tmp_root_dir }}/{{ git_repo_name }}"
+    version: "{{ git_repo_branch }}"
+    force: yes       # Still clone down and overwrite incase local repo is existing.
+  # ignore_errors: true # You want this to fail if errors are there
+  environment:
+    GIT_SSL_NO_VERIFY: "true"
+  run_once: true
+  delegate_to: localhost
+  ignore_errors: true # You want the role to run end to end
+
+- name: Generate Lists from interfaces.txt files
+  ansible.builtin.set_fact:
+    interfaces_list: "{{ lookup('file', '{{ interfaces_to_change_file_path }}').splitlines() }}"
+    # protocols_list: "{{ lookup('file', '{{ protocols_file }}').splitlines() }}"
+  delegate_to: localhost
+
+- name: Display lists
+  ansible.builtin.debug:
+    msg: 
+      - "Interfaces List ; {{ interfaces_list }}"
+  delegate_to: localhost
+  ignore_errors: true
+
+- name: Display commands to run
+  ansible.builtin.debug:
+    msg: 
+      - "delete interfaces {{ item }} disable"
+  loop: "{{ interfaces_list }}"
+  delegate_to: localhost
+  ignore_errors: true

@@ -1,6 +1,17 @@
 ---
 # Main tasks
+- name: Setting file names
+  ansible.builtin.set_fact:
+    show_interface_terse_output_file: show-interfaces-terse.txt
+    show_ospf_interface_output_file: show-ospf-interface.txt
+    interfaces_to_change_file: interfaces.txt
+
 - name: Import traffic tasks
-  ansible.builtin.import_tasks: manage-traffic.yml
+  ansible.builtin.import_tasks: isolation.yml
+  when: isolation
+
+- name: Import traffic normalization tasks
+  ansible.builtin.import_tasks: normalization.yml
+  when: normalization
 
 
