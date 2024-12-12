@@ -1,0 +1,66 @@
+---
+# Set file names
+- name: Setting file names
+  ansible.builtin.set_fact:
+    show_interfaces_terse_file: show-interfaces-terse.txt
+    show_ospf_interfaces_file: show-ospf-interface.txt
+    interfaces_file: interfaces-to-change.txt
+  delegate_to: localhost
+
+# Collect all the present interfaces
+- name: Collect current interfaces
+  junipernetworks.junos.junos_command: 
+    commands: show interfaces terse
+  register: show_interfaces_terse
+  when: isolation
+
+# Debug the output
+# - name: Debug show interfaces terse
+#   ansible.builtin.debug:
+#     var: show_interfaces_terse
+
+# regex_replace('\r\n', '\n'): Ensures that the output is formatted properly with new lines,
+# in case the original output contains carriage return and line feed (\r\n).
+- name: Ensure the output is properly formatted
+  ansible.builtin.set_fact:
+    formatted_output: "{{ show_interfaces_terse.stdout[0] | regex_replace('\r\n', '\n') }}"
+  delegate_to: localhost
+  ignore_errors: true
+  when: show_interfaces_terse["failed"] == false
+
+- name: Save the output to the show_interfaces_terse_file
+  ansible.builtin.copy:
+    content: "{{ formatted_output }}"
+    dest: "{{ show_interfaces_terse_file }}"
+  delegate_to: localhost
+  ignore_errors: true
+  when: show_interfaces_terse["failed"] == false
+
+
+# Collect the interfaces participating in ospf
+- name: Collect ospf interfaces
+  junipernetworks.junos.junos_command: 
+    commands: show ospf interface
+  register: show_ospf_interface
+  when: isolation
+
+# Debug the output
+# - name: Debug show ospf interfaces
+#   ansible.builtin.debug:
+#     var: show_ospf_interfaces             
+
+- name: Ensure the output is properly formatted
+  ansible.builtin.set_fact:
+    formatted_output: "{{ show_ospf_interface.stdout[0] | regex_replace('\r\n', '\n') }}"
+  delegate_to: localhost
+  ignore_errors: true
+  when: show_ospf_interface["failed"] == false
+
+- name: Save the output to the show_ospf_interface_file
+  ansible.builtin.copy:
+    content: "{{ formatted_output }}"
+    dest: "{{ show_ospf_interface_file }}"
+  delegate_to: localhost
+  ignore_errors: true
+  when: show_ospf_interface["failed"] == false
+
