@@ -48,10 +48,10 @@
   ignore_errors: true
   when: show_ospf_interface["failed"] == false
 
-- name: Save the output to the show_ospf_interface_file
+- name: Save the output to the show_ospf_interfaces_file
   ansible.builtin.copy:
     content: "{{ formatted_output }}"
-    dest: "{{ show_ospf_interface_file }}"
+    dest: "{{ show_ospf_interfaces_file }}"
   delegate_to: localhost
   ignore_errors: true
   when: show_ospf_interface["failed"] == false
