@@ -5,18 +5,35 @@
 # 3. library/getList.py script is run.. Creates an interfaces.txt and protocols.txt files
 # 4. Ansible tasks run against the data in the 2 files above.
 
-# - name: Call running-configs task
-#   ansible.builtin.import_tasks: running-config.yml
-#   delegate_to: localhost
+# Collect all the present interfaces
+- name: Collect current interfaces
+  junipernetworks.junos.junos_command: 
+    commands: show interfaces terse
+  register: show_interfaces_terse
+  when: isolation
 
-- name: Call junos-facts task
-  ansible.builtin.import_tasks: junos-facts.yml
-  delegate_to: localhost
+# Debug the output
+- name: Debug show interfaces terse
+  ansible.builtin.debug:
+    var: show_interfaces_terse
 
-# - name: Run library/getList.py
-#   ansible.builtin.command:
-#     cmd: "python3 library/getList.py {{ running_config_file }} {{ interfaces_file }} {{ protocols_file }}" # A string that identifies which function to call
-#   register: script_output
+
+# Collect the interfaces participating in ospf
+- name: Collect ospf interfaces
+  junipernetworks.junos.junos_command: 
+    commands: show ospf interfaces
+  register: show_ospf_interfaces
+  when: isolation
+
+# Debug the output
+- name: Debug show ospf interfaces
+  ansible.builtin.debug:
+    var: show_ospf_interfaces             
+
+
+
+
+
 
 # # Read the health-checks commands files and create a list of commands to run
 # - name: Generate Lists from interfaces.txt and protocols.txt files
