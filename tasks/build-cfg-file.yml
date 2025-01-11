@@ -1,0 +1,98 @@
+---
+# Git clone the backups repo.
+# We need the saved running configs and the repo to store the .cfg files for traffic redirection
+- name: Clone the config backup git repository
+  ansible.builtin.git:
+    repo: "{{ git_repo_url }}"
+    dest: "{{ tmp_root_dir }}/{{ git_repo_name }}"
+    version: "{{ git_repo_branch }}"
+    force: yes       # Still clone down and overwrite incase local repo is existing.
+  # ignore_errors: true # You want this to fail if errors are there
+  environment:
+    GIT_SSL_NO_VERIFY: "true"
+  run_once: true
+  delegate_to: localhost
+  ignore_errors: true # You want the role to run end to end
+
+# Enable git lfs by default
+- name: Enable git lfs by default
+  ansible.builtin.shell: |
+    cd {{ tmp_root_dir }}/{{ git_repo_name }}
+    git lfs track "*.bin"
+    git lfs track "*.ucs"
+    git lfs track "*.tgz" 
+    git lfs pull 
+  run_once: true
+  ignore_errors: true
+  delegate_to: localhost
+
+- name: Setting file paths
+  ansible.builtin.set_fact:
+    inventory_hostname_dir_path: "{{ tmp_root_dir }}/{{ git_repo_name }}/{{ vendor_dir }}/{{ inventory_hostname }}"
+    show_interface_terse_output_file: "{{ tmp_root_dir }}/show-interfaces-terse.txt"
+    traffic_isolation_cfg_file: "{{ tmp_root_dir }}/pre-upgrade-traffic-isolation.cfg"
+    traffic_normalization_cfg_file: "{{ tmp_root_dir }}/post-upgrade-traffic-normalization.cfg"
+  delegate_to: localhost
+    
+- name: Setting running config file path
+  ansible.builtin.set_fact:
+    running_config_file_path: "{{ inventory_hostname_dir_path }}/config-backup/{{ inventory_hostname }}-running-config.cfg"
+  delegate_to: localhost
+
+# Collect southbound interfaces which are admin=up , link=up
+- name: Collect current interfaces
+  junipernetworks.junos.junos_command: 
+    commands: show interfaces terse
+  register: show_interfaces_terse
+
+- name: Ensure the output is properly formatted
+  ansible.builtin.set_fact:
+    formatted_output: "{{ show_interfaces_terse.stdout[0] | regex_replace('\r\n', '\n') }}"
+  delegate_to: localhost
+  ignore_errors: true
+  when: show_interfaces_terse["failed"] == false
+
+- name: Save the output to the show_interface_terse_output_file
+  ansible.builtin.copy:
+    content: "{{ formatted_output }}"
+    dest: "{{ show_interface_terse_output_file }}"
+  delegate_to: localhost
+  ignore_errors: true
+  when: show_interfaces_terse["failed"] == false
+
+# Call python script to build the 2 .cfg files
+- name: Run python script to build interfaces list
+  ansible.builtin.command:
+    cmd: "python3 library/createConfigFiles.py {{ show_interface_terse_output_file }} {{ running_config_file_path }} {{ traffic_isolation_cfg_file }} {{ traffic_normalization_cfg_file }}"
+  delegate_to: localhost
+
+# push the 2 .cfg files to remote git repo.
+- name: Ensure traffic-redirect dir is present - create if absent
+  ansible.builtin.file:
+    path: "{{ inventory_hostname_dir_path }}/traffic-redirect"
+    state: directory
+  ignore_errors: true
+  delegate_to: localhost
+
+- name: Copy the 2 .cfg files into the local repository
+  ansible.builtin.shell: |
+    cp {{ traffic_isolation_cfg_file }} {{ inventory_hostname_dir_path }}/traffic-redirect
+    cp {{ traffic_normalization_cfg_file }} {{ inventory_hostname_dir_path }}/traffic-redirect
+  delegate_to: localhost
+  when: normalization
+
+- name: Commit the changes and push to the remote repository
+  ansible.builtin.shell: |
+     cd {{ tmp_root_dir }}/{{ git_repo_name }}
+     git config --global user.name {{ git_user }}
+     git config --global user.email {{ git_user_email }}
+     git add .
+     git commit -m "file updates on $(date)"
+     git push
+  run_once: true
+  environment:
+    GIT_SSL_NO_VERIFY: "true"
+  ignore_errors: true # You want the role to run end to end
+  delegate_to: localhost
+  when: isolation
+

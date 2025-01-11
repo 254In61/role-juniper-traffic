@@ -1,0 +1,8 @@
+---
+# Tasks to perform traffic isolation
+# Commands are read from pre-upgrade-traffic-isolation.cfg and applied to the device
+
+- name: Traffic isolation tasks
+  ansible.builtin.debug:
+    msg: "Traffic isolation tasks ......"
+  delegate_to: localhost
