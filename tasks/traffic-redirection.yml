@@ -1,21 +1,39 @@
 ---
 # Tasks to perform traffic redirection
-- name: "Set {{ traffic_isolation_cfg_file }} file as configs store"
-  ansible.builtin.set_fact:
-    cfg_file: "{{ traffic_isolation_cfg_file }}"
+
+# traffic isolation stage
+- block:
+    - name: Import cfg-file tasks
+      ansible.builtin.import_tasks: cfg-file.yml
+
+    - name: "Set {{ traffic_isolation_cfg_file }} file as configs store"
+      ansible.builtin.set_fact:
+        cfg_file: "{{ traffic_isolation_cfg_file }}"
+      delegate_to: localhost
+      
   when: isolation
 
-- name: "Set {{ traffic_normalization_cfg_file }} file as configs store"
-  ansible.builtin.set_fact:
-    cfg_file: "{{ traffic_normalization_cfg_file }}"
+# traffic normalization stage
+- block:
+    - name: Clone the config backup git repository
+      ansible.builtin.git:
+        repo: "{{ git_repo_url }}"
+        dest: "{{ tmp_root_dir }}/{{ git_repo_name }}"
+        version: "{{ git_repo_branch }}"
+        force: yes       # Still clone down and overwrite incase local repo is existing.
+      environment:
+        GIT_SSL_NO_VERIFY: "true"
+      run_once: true
+      delegate_to: localhost
+      ignore_errors: true # You want the role to run end to end
+
+    - name: "Set {{ traffic_normalization_cfg_file }} file as configs store"
+      ansible.builtin.set_fact:
+        cfg_file: "{{ traffic_redirect_dir_path }}/{{ traffic_normalization_cfg_file }}"
+  
   when: normalization
 
-- name: Traffic redirection tasks
-  ansible.builtin.debug:
-    msg: "Traffic redirection tasks ......"
-  delegate_to: localhost
-
-# Read the health-checks commands files and create a list of commands to run
+# Read the respective .cfg file and create a list of commands to be applied
 - name: Build list of commands
   ansible.builtin.set_fact:
     command_list: "{{ lookup('file', '{{ cfg_file }}').splitlines() }}"
