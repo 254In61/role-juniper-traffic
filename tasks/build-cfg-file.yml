@@ -26,31 +26,27 @@
   ignore_errors: true
   delegate_to: localhost
 
-- name: Setting file paths
-  ansible.builtin.set_fact:
-    inventory_hostname_dir_path: "{{ tmp_root_dir }}/{{ git_repo_name }}/{{ vendor_dir }}/{{ inventory_hostname }}"
-    show_interface_terse_output_file: "{{ tmp_root_dir }}/show-interfaces-terse.txt"
-    traffic_isolation_cfg_file: "{{ tmp_root_dir }}/pre-upgrade-traffic-isolation.cfg"
-    traffic_normalization_cfg_file: "{{ tmp_root_dir }}/post-upgrade-traffic-normalization.cfg"
-  delegate_to: localhost
-    
 - name: Setting running config file path
   ansible.builtin.set_fact:
     running_config_file_path: "{{ inventory_hostname_dir_path }}/config-backup/{{ inventory_hostname }}-running-config.cfg"
   delegate_to: localhost
+  when: isolation # Skip task when it's traffic normalization stage
 
 # Collect southbound interfaces which are admin=up , link=up
 - name: Collect current interfaces
   junipernetworks.junos.junos_command: 
     commands: show interfaces terse
   register: show_interfaces_terse
+  when: isolation # Skip task when it's traffic normalization stage
 
 - name: Ensure the output is properly formatted
   ansible.builtin.set_fact:
     formatted_output: "{{ show_interfaces_terse.stdout[0] | regex_replace('\r\n', '\n') }}"
   delegate_to: localhost
   ignore_errors: true
-  when: show_interfaces_terse["failed"] == false
+  when: 
+    - show_interfaces_terse["failed"] == false
+    - isolation # Skip task when it's traffic normalization stage
 
 - name: Save the output to the show_interface_terse_output_file
   ansible.builtin.copy:
@@ -58,13 +54,16 @@
     dest: "{{ show_interface_terse_output_file }}"
   delegate_to: localhost
   ignore_errors: true
-  when: show_interfaces_terse["failed"] == false
+  when: 
+    - show_interfaces_terse["failed"] == false
+    - isolation # Skip task when it's traffic normalization stage
 
 # Call python script to build the 2 .cfg files
 - name: Run python script to build interfaces list
   ansible.builtin.command:
-    cmd: "python3 library/createConfigFiles.py {{ show_interface_terse_output_file }} {{ running_config_file_path }} {{ traffic_isolation_cfg_file }} {{ traffic_normalization_cfg_file }}"
+    cmd: "python3 library/createConfigFiles.py {{ show_interface_terse_output_file }} {{ running_config_file_path }} {{ traffic_isolation # Skip task when it's traffic normalization stage_cfg_file }} {{ traffic_normalization_cfg_file }}"
   delegate_to: localhost
+  when: isolation # Skip task when it's traffic normalization stage
 
 # push the 2 .cfg files to remote git repo.
 - name: Ensure traffic-redirect dir is present - create if absent
@@ -73,13 +72,15 @@
     state: directory
   ignore_errors: true
   delegate_to: localhost
+  when: isolation # Skip task when it's traffic normalization stage
 
 - name: Copy the 2 .cfg files into the local repository
   ansible.builtin.shell: |
-    cp {{ traffic_isolation_cfg_file }} {{ inventory_hostname_dir_path }}/traffic-redirect
+    cp {{ traffic_isolation # Skip task when it's traffic normalization stage_cfg_file }} {{ inventory_hostname_dir_path }}/traffic-redirect
     cp {{ traffic_normalization_cfg_file }} {{ inventory_hostname_dir_path }}/traffic-redirect
   delegate_to: localhost
-  when: normalization
+  when: isolation # Skip task when it's traffic normalization stage
+
 
 - name: Commit the changes and push to the remote repository
   ansible.builtin.shell: |
@@ -94,5 +95,5 @@
     GIT_SSL_NO_VERIFY: "true"
   ignore_errors: true # You want the role to run end to end
   delegate_to: localhost
-  when: isolation
+  when: isolation # Skip task when it's traffic normalization stage
 

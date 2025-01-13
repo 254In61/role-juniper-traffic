@@ -1,0 +1,32 @@
+---
+# Tasks to perform traffic redirection
+- name: "Set {{ traffic_isolation_cfg_file }} file as configs store"
+  ansible.builtin.set_fact:
+    cfg_file: "{{ traffic_isolation_cfg_file }}"
+  when: isolation
+
+- name: "Set {{ traffic_normalization_cfg_file }} file as configs store"
+  ansible.builtin.set_fact:
+    cfg_file: "{{ traffic_normalization_cfg_file }}"
+  when: normalization
+
+- name: Traffic redirection tasks
+  ansible.builtin.debug:
+    msg: "Traffic redirection tasks ......"
+  delegate_to: localhost
+
+# Read the health-checks commands files and create a list of commands to run
+- name: Build list of commands
+  ansible.builtin.set_fact:
+    command_list: "{{ lookup('file', '{{ cfg_file }}').splitlines() }}"
+  delegate_to: localhost
+
+# This task produces a dictionary of results for each command run.
+# To be un-commented when having a lab to excercise with.
+# - name: Apply traffic-redirection commands in the config file
+#   junipernetworks.junos.junos_config:
+#     lines: "{{ item }}"
+#     comment: apply traffic redirection commands
+#   ignore_errors: true
+#   loop: "{{ command_list }}"
+  

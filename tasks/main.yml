@@ -1,15 +1,17 @@
 ---
 # Main tasks
+- name: Setting file paths
+  ansible.builtin.set_fact:
+    inventory_hostname_dir_path: "{{ tmp_root_dir }}/{{ git_repo_name }}/{{ vendor_dir }}/{{ inventory_hostname }}"
+    show_interface_terse_output_file: "{{ tmp_root_dir }}/show-interfaces-terse.txt"
+    traffic_isolation_cfg_file: "{{ tmp_root_dir }}/{{ traffic_isolation_configs }}"
+    traffic_normalization_cfg_file: "{{ tmp_root_dir }}/{{ traffic_normalization_configs }}"
+  delegate_to: localhost
+    
 - name: Import build-cfg-file tasks
   ansible.builtin.import_tasks: build-cfg-file.yml
-  when: isolation # Tasks take place during isolation stage and not repeated in normalization stage.
 
-- name: Import traffic isolation tasks
-  ansible.builtin.import_tasks: traffic-isolation.yml
-  when: isolation
-
-- name: Import traffic normalization tasks
-  ansible.builtin.import_tasks: traffic-normalization.yml
-  when: normalization
-
+- name: Import traffic redirection tasks
+  ansible.builtin.import_tasks: traffic-redirection.yml
+  
 
