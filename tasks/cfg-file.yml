@@ -97,6 +97,7 @@
      cd {{ tmp_root_dir }}/{{ git_repo_name }}
      git config user.name {{ git_user }}
      git config user.email {{ git_email }}
+     git config lfs.https://{{ git_user }}:{{ git_token }}@{{ git_repo_path }}.info/lfs.locksverify true
      git add .
      git commit -m "file updates on $(date)"
      git push https://{{ git_user }}:{{ git_token }}@{{ git_repo_path }}
@@ -104,16 +105,3 @@
   ignore_errors: true # You want the role to run end to end
   delegate_to: localhost
   
-# - name: Commit the changes and push to the remote repository
-#   ansible.builtin.shell: |
-#      cd {{ tmp_root_dir }}/{{ git_repo_name }}
-#      git config --global user.name {{ git_user }}
-#      git config --global user.email {{ git_user_email }}
-#      git add .
-#      git commit -m "file updates on $(date)"
-#      git push
-#   run_once: true
-#   environment:
-#     GIT_SSL_NO_VERIFY: "true"
-#   ignore_errors: true # You want the role to run end to end
-#   delegate_to: localhost
