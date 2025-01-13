@@ -89,17 +89,29 @@
     cp {{ traffic_isolation_cfg_file }} {{ traffic_redirect_dir_path }}
     cp {{ traffic_normalization_cfg_file }} {{ traffic_redirect_dir_path }}
   delegate_to: localhost
-  
+
 - name: Commit the changes and push to the remote repository
   ansible.builtin.shell: |
      cd {{ tmp_root_dir }}/{{ git_repo_name }}
-     git config --global user.name {{ git_user }}
-     git config --global user.email {{ git_user_email }}
+     git config user.name {{ git_robot_name }}
+     git config user.email {{ git_robot_email }}
      git add .
      git commit -m "file updates on $(date)"
-     git push
+     git push https://{{ git_robot_token }}@{{ git_repo_url }}
   run_once: true
-  environment:
-    GIT_SSL_NO_VERIFY: "true"
   ignore_errors: true # You want the role to run end to end
   delegate_to: localhost
+  
+# - name: Commit the changes and push to the remote repository
+#   ansible.builtin.shell: |
+#      cd {{ tmp_root_dir }}/{{ git_repo_name }}
+#      git config --global user.name {{ git_user }}
+#      git config --global user.email {{ git_user_email }}
+#      git add .
+#      git commit -m "file updates on $(date)"
+#      git push
+#   run_once: true
+#   environment:
+#     GIT_SSL_NO_VERIFY: "true"
+#   ignore_errors: true # You want the role to run end to end
+#   delegate_to: localhost
