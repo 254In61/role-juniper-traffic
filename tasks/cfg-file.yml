@@ -48,7 +48,7 @@
 # Call python script to build the 2 .cfg files
 - name: Run python script to build interfaces list
   ansible.builtin.command:
-    cmd: "python3 library/createConfigFiles.py {{ show_interface_terse_output_file }} {{ running_config_file }} {{ traffic_isolation # Skip task when it's traffic normalization stage_cfg_file }} {{ traffic_normalization_cfg_file }}"
+    cmd: "python3 library/createConfigFiles.py {{ show_interface_terse_output_file }} {{ running_config_file }} {{ traffic_isolation_cfg_file }} {{ traffic_normalization_cfg_file }}"
   delegate_to: localhost
 
 # git tasks
