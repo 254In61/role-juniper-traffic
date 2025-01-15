@@ -47,4 +47,4 @@
     comment: apply traffic redirection commands
   ignore_errors: true
   loop: "{{ command_list }}"
-  when: '!' not in item
+  when: "'!' not in item"
