@@ -36,7 +36,7 @@
 # Read the respective .cfg file and create a list of commands to be applied
 - name: Build list of commands
   ansible.builtin.set_fact:
-    command_list: "{{ lookup('file', '{{ cfg_file }}').splitlines() }}"
+    command_list: "{{ lookup('file', cfg_file).splitlines() | reject('search', '!') | list }}"
   delegate_to: localhost
 
 - name: Apply traffic-redirection commands in the config file
