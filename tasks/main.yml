@@ -6,7 +6,7 @@
     show_interface_terse_output_file: "{{ tmp_root_dir }}/show-interfaces-terse.txt"
     traffic_isolation_cfg_file: "{{ tmp_root_dir }}/{{ traffic_isolation_configs }}"
     traffic_normalization_cfg_file: "{{ tmp_root_dir }}/{{ traffic_normalization_configs }}"
-    running_config_file: "{{ tmp_root_dir }}/{{ inventory_hostname }}-running-config.cfg"
+    running_config_file: "{{ tmp_root_dir }}/{{ git_repo_name }}/{{ vendor_dir }}/{{ inventory_hostname }}/config-backup/{{ inventory_hostname }}-running-config.cfg"
   delegate_to: localhost
     
 - name: Import traffic redirection tasks

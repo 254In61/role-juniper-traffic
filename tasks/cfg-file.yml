@@ -1,29 +1,36 @@
 ---
-# Collect running configs
-- name: Collect junos device running configs
-  junipernetworks.junos.junos_command:
-    commands: show configuration
-    display: set
-  register: config_output
-  ignore_errors: true
- 
-# regex_replace('\r\n', '\n'): Ensures that the configuration is formatted properly with new lines,
-# in case the original output contains carriage return and line feed (\r\n).
-- name: Ensure the config is properly formatted
-  ansible.builtin.set_fact:
-    formatted_config: "{{ config_output.stdout[0] | regex_replace('\r\n', '\n') }}"
+# git tasks
+- name: Clone the config backup git repository to get the saved running config file
+  ansible.builtin.git:
+    repo: "https://{{ git_user }}:{{ git_token }}@{{ git_repo_path }}"
+    dest: "{{ tmp_root_dir }}/{{ git_repo_name }}"
+    version: "{{ git_repo_branch }}"
+    force: yes       # Still clone down and overwrite incase local repo is existing.
+  # ignore_errors: true # You want this to fail if errors are there
+  environment:
+    GIT_SSL_NO_VERIFY: "true"
+  run_once: true
   delegate_to: localhost
-  ignore_errors: true
-  when: config_output["failed"] == false
+  ignore_errors: true # You want the role to run end to end
 
-- name: Save the configuration to the temporary config store
-  ansible.builtin.copy:
-    content: "{{ formatted_config }}"
-    dest: "{{ running_config_file }}"
-  delegate_to: localhost
+- name: Enable git lfs by default
+  ansible.builtin.shell: |
+    cd {{ tmp_root_dir }}/{{ git_repo_name }}
+    git lfs track "*.bin"
+    git lfs track "*.ucs"
+    git lfs track "*.tgz" 
+    git lfs pull 
+  run_once: true
   ignore_errors: true
-  when: config_output["failed"] == false
- 
+  delegate_to: localhost
+
+- name: Ensure traffic-redirect dir is present - create if absent
+  ansible.builtin.file:
+    path: "{{ traffic_redirect_dir_path }}"
+    state: directory
+  ignore_errors: true
+  delegate_to: localhost
+
 # Collect southbound interfaces which are admin=up , link=up
 - name: Collect current interfaces
   junipernetworks.junos.junos_command: 
@@ -51,41 +58,6 @@
     cmd: "python3 library/createConfigFiles.py {{ show_interface_terse_output_file }} {{ running_config_file }} {{ traffic_isolation_cfg_file }} {{ traffic_normalization_cfg_file }}"
   delegate_to: localhost
 
-# git tasks
-- name: Clone the config backup git repository
-  ansible.builtin.git:
-    #repo: "{{ git_repo_url }}"
-    #repo: "https://{{ git_user }}:{{ git_pwd }}@{{ git_repo_path}}"
-    repo: "https://{{ git_user }}:{{ git_token }}@{{ git_repo_path }}"
-    dest: "{{ tmp_root_dir }}/{{ git_repo_name }}"
-    version: "{{ git_repo_branch }}"
-    force: yes       # Still clone down and overwrite incase local repo is existing.
-  # ignore_errors: true # You want this to fail if errors are there
-  environment:
-    GIT_SSL_NO_VERIFY: "true"
-  run_once: true
-  delegate_to: localhost
-  ignore_errors: true # You want the role to run end to end
-
-- name: Enable git lfs by default
-  ansible.builtin.shell: |
-    cd {{ tmp_root_dir }}/{{ git_repo_name }}
-    git lfs track "*.bin"
-    git lfs track "*.ucs"
-    git lfs track "*.tgz" 
-    git lfs pull 
-  run_once: true
-  ignore_errors: true
-  delegate_to: localhost
-
-# push the 2 .cfg files to remote git repo during isolation stage
-- name: Ensure traffic-redirect dir is present - create if absent
-  ansible.builtin.file:
-    path: "{{ traffic_redirect_dir_path }}"
-    state: directory
-  ignore_errors: true
-  delegate_to: localhost
- 
 - name: Copy the 2 .cfg files into the local repository
   ansible.builtin.shell: |
     cp {{ traffic_isolation_cfg_file }} {{ traffic_redirect_dir_path }}
