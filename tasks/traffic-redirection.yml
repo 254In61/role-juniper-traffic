@@ -41,10 +41,9 @@
 
 # This task produces a dictionary of results for each command run.
 # To be un-commented when having a lab to excercise with.
-# - name: Apply traffic-redirection commands in the config file
-#   junipernetworks.junos.junos_config:
-#     lines: "{{ item }}"
-#     comment: apply traffic redirection commands
-#   ignore_errors: true
-#   loop: "{{ command_list }}"
-  
+- name: Apply traffic-redirection commands in the config file
+  junipernetworks.junos.junos_config:
+    lines: "{{ item }}"
+    comment: apply traffic redirection commands
+  ignore_errors: true
+  loop: "{{ command_list }}"
