@@ -39,10 +39,19 @@
     command_list: "{{ lookup('file', '{{ cfg_file }}').splitlines() }}"
   delegate_to: localhost
 
+# - name: Apply traffic-redirection commands in the config file
+#   junipernetworks.junos.junos_config:
+#     lines: "{{ item }}"
+#     comment: apply traffic redirection commands
+#   ignore_errors: true
+#   loop: "{{ command_list }}"
+#   when: "'!' not in item"
+
 - name: Apply traffic-redirection commands in the config file
   junipernetworks.junos.junos_config:
-    lines: "{{ item }}"
+    lines: 
+      - set vlans vlan01 description "Test-vlan1"
+      - set vlans vlan02 description "Test-vlan2"
     comment: apply traffic redirection commands
   ignore_errors: true
-  loop: "{{ command_list }}"
-  when: "'!' not in item"
+  
