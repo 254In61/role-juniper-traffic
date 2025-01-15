@@ -34,24 +34,18 @@
   when: normalization
 
 # Read the respective .cfg file and create a list of commands to be applied
+# Build a list of commands while ignoring any with 'i'
 - name: Build list of commands
   ansible.builtin.set_fact:
     command_list: "{{ lookup('file', cfg_file).splitlines() | reject('search', '!') | list }}"
   delegate_to: localhost
 
+
+# To confirm if commit is automated on this.
 - name: Apply traffic-redirection commands in the config file
   junipernetworks.junos.junos_config:
-    lines: "{{ command_list }}"
+    lines: "{{ command_list }}"   # options takes in a list.
     comment: apply traffic redirection commands
   ignore_errors: true
-  # loop: "{{ command_list }}"
-  # when: "'!' not in item"
 
-# - name: Apply traffic-redirection commands in the config file
-#   junipernetworks.junos.junos_config:
-#     lines: 
-#       - set vlans vlan01 description "Test-vlan1"
-#       - set vlans vlan02 description "Test-vlan2"
-#     comment: apply traffic redirection commands
-#   ignore_errors: true
   
