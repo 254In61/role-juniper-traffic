@@ -44,7 +44,7 @@
     lines: "{{ command_list }}"
     comment: apply traffic redirection commands
   ignore_errors: true
-  loop: "{{ command_list }}"
+  # loop: "{{ command_list }}"
   # when: "'!' not in item"
 
 # - name: Apply traffic-redirection commands in the config file
