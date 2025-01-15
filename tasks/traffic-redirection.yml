@@ -39,8 +39,6 @@
     command_list: "{{ lookup('file', '{{ cfg_file }}').splitlines() }}"
   delegate_to: localhost
 
-# This task produces a dictionary of results for each command run.
-# To be un-commented when having a lab to excercise with.
 - name: Apply traffic-redirection commands in the config file
   junipernetworks.junos.junos_config:
     lines: "{{ item }}"
