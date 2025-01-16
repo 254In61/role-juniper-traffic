@@ -42,10 +42,15 @@
 
 
 # To confirm if commit is automated on this.
-- name: Apply traffic-redirection commands in the config file
-  junipernetworks.junos.junos_config:
-    lines: "{{ command_list }}"   # options takes in a list.
-    comment: apply traffic redirection commands
-  ignore_errors: true
+# - name: Apply traffic-redirection commands in the config file
+#   junipernetworks.junos.junos_config:
+#     lines: "{{ command_list }}"   # options takes in a list.
+#     comment: apply traffic redirection commands # == commit comment "apply traffic redirection commands"
+#   ignore_errors: true
 
-  
+- name: Test config changes
+  junipernetworks.junos.junos_config:
+    lines:
+      - set protocols ospf overload
+    comment: Testing junos_config by setting ospf overload # == commit comment "apply traffic redirection commands"
+  ignore_errors: true  
