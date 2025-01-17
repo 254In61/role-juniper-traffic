@@ -10,11 +10,38 @@
       ansible.builtin.set_fact:
         cfg_file: "{{ traffic_isolation_cfg_file }}"
       delegate_to: localhost
-      
+
   when: isolation
 
 # traffic normalization stage
 - block:
+    # 1. BGP traffic normalization
+    - name: BGP traffic normalization
+      junipernetworks.junos.junos_config:
+        lines: "{{ bgp_normalization_cmds }}"
+        comment: delete protocols ospf overloadd # == commit comment 
+      ignore_errors: true
+    
+    # 2. OSPF traffic normalization
+    - name: OSPF traffic normalization
+      junipernetworks.junos.junos_config:
+        lines: "{{ ospf_normalization_cmds }}"
+        comment: delete protocols ospf overload # == commit comment 
+      ignore_errors: true
+    
+    # 3. Enable southbound interfaces
+
+
+    # 4. VRRP movement
+
+
+
+    # 5. External downlink switch ports enabling (TBD)
+
+
+
+
+    # 6. VIP Service management (TBD)
     - name: Clone the config backup git repository
       ansible.builtin.git:
         repo: "{{ git_repo_url }}"
@@ -27,10 +54,12 @@
       delegate_to: localhost
       ignore_errors: true # You want the role to run end to end
 
-    - name: "Set {{ traffic_normalization_cfg_file }} file as configs store"
-      ansible.builtin.set_fact:
-        cfg_file: "{{ traffic_redirect_dir_path }}/{{ traffic_normalization_cfg_file }}"
-  
+    # - name: "Set {{ traffic_normalization_cfg_file }} file as configs store"
+    #   ansible.builtin.set_fact:
+    #     cfg_file: "{{ traffic_redirect_dir_path }}/{{ traffic_normalization_cfg_file }}"
+    
+    
+
   when: normalization
 
 # Read the respective .cfg file and create a list of commands to be applied
@@ -45,6 +74,7 @@
 # - name: Apply traffic-redirection commands in the config file
 #   junipernetworks.junos.junos_config:
 #     lines: "{{ command_list }}"   # options takes in a list.
+
 #     comment: apply traffic redirection commands # == commit comment "apply traffic redirection commands"
 #   ignore_errors: true
 

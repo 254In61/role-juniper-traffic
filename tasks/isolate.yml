@@ -1,0 +1,31 @@
+---
+# Traffic isolation tasks
+# 1. VIP Service Movement(TBD)
+
+
+# 2. External Downlink Switch ports disabling
+
+
+
+# 3. VRRP Movement
+
+
+
+# 4. Disable Southbound interfaces
+
+
+
+# 5. OSPF Traffic isolation
+- name: OSPF traffic isolation
+  junipernetworks.junos.junos_config:
+    lines: "{{ ospf_isolation_cmds }}"
+    comment: implement ospf traffic isolation
+  ignore_errors: true
+
+
+# 6. BGP Traffic isolation
+- name: BGP traffic isolation
+  junipernetworks.junos.junos_config:
+    lines: "{{ bgp_isolation_cmds }}"
+    comment: implement bgp isolation
+  ignore_errors: true

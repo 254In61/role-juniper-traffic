@@ -8,8 +8,17 @@
     traffic_normalization_cfg_file: "{{ tmp_root_dir }}/{{ traffic_normalization_configs }}"
     running_config_file: "{{ tmp_root_dir }}/{{ git_repo_name }}/{{ vendor_dir }}/{{ inventory_hostname }}/config-backup/{{ inventory_hostname }}-running-config.cfg"
   delegate_to: localhost
-    
-- name: Import traffic redirection tasks
-  ansible.builtin.import_tasks: traffic-redirection.yml
+
+
+# - name: Import traffic redirection tasks
+#   ansible.builtin.import_tasks: traffic-redirection.yml
+
+- name: Import traffic isolation tasks
+  ansible.builtin.import_tasks: isolate.yml
+  when: isolation
+
+- name: Import traffic normalization tasks
+  ansible.builtin.import_tasks: normalize.yml
+  when: normalization
   
 

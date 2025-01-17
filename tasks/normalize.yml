@@ -1,0 +1,32 @@
+---
+# Traffic normalization tasks
+
+# 1. BGP traffic normalization
+- name: BGP traffic normalization
+  junipernetworks.junos.junos_config:
+    lines: "{{ bgp_normalization_cmds }}"
+    comment: implement bgp traffic normalization
+  ignore_errors: true
+    
+# 2. OSPF traffic normalization
+- name: OSPF traffic normalization
+  junipernetworks.junos.junos_config:
+    lines: "{{ ospf_normalization_cmds }}"
+    comment: implement ospf traffic normalization
+  ignore_errors: true
+    
+# 3. Enable southbound interfaces
+
+
+# 4. VRRP movement
+
+
+
+# 5. External downlink switch ports enabling (TBD)
+
+
+
+
+# 6. VIP Service management (TBD)
+
+    
