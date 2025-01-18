@@ -1,31 +1,50 @@
 ---
 # Traffic isolation tasks
-# 1. VIP Service Movement(TBD)
 
-
-# 2. External Downlink Switch ports disabling
-
-
-
-# 3. VRRP Movement
+# VRRP - CHANGE TO LOWER PRIORITY
 
 
 
-# 4. Disable Southbound interfaces
+# DISABLE SOUTHBOUND INTERFACES
+# - name: Run python script to obtain southbound interfaces
+#   ansible.builtin.command:
+#     cmd: "python3 library/getSouthBoundInterfaces.py {{ show_interfaces_terse_file }} {{ running_config_file }}"
+#   register: script_run
+#   ignore_errors: true
 
+# - name: Set interfaces list
+#   ansible.builtin.set_fact:
+#     interfaces: "{{ script_run['stdout'] }}"
+#   ignore_errors: true
 
+# regex_replace: Appends the string set interfaces <interface> disable to each item in the list.
+# - name: Generate disable interfaces commands
+#   ansible.builtin.set_fact:
+#     interface_disable_commands: "{{ interfaces | map('regex_replace', 'set interfaces \\0 disable') | list }}"
+#   ignore_errors: true
 
-# 5. OSPF Traffic isolation
+# - name: Display generated commands
+#   ansible.builtin.debug:
+#     var: interface_disable_commands
+#   ignore_errors: true
+
+# - name: Disable southbound interfaces
+#   junipernetworks.junos.junos_config:
+#     lines: "{{ disable_commands }}"
+#     comment: "Disabled interfaces as per the list"
+#     commit: true
+
+# OSPF TRAFFIC ISOLATION
 - name: OSPF traffic isolation
   junipernetworks.junos.junos_config:
-    lines: "{{ ospf_isolation_cmds }}"
+    lines: "{{ ospf_cmds }}"
     comment: implement ospf traffic isolation
   ignore_errors: true
 
 
-# 6. BGP Traffic isolation
+# BGP TRAFFIC ISOLATION
 - name: BGP traffic isolation
   junipernetworks.junos.junos_config:
-    lines: "{{ bgp_isolation_cmds }}"
+    lines: "{{ bgp_cmds }}"
     comment: implement bgp isolation
   ignore_errors: true
